@@ -14,21 +14,21 @@ app.use(cors());
 // app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
 app.use(bodyParser.json()); // application/json
 // app.use((req, res, next) => {
-  //     res.setHeader('Access-Control-Allow-Origin', '*');
-  //     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE');
-  //     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  //     next();
-  // });
-  
-  const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'images');
-    },
-    filename: function (req, file, cb) {
-      cb(null, uuidv4());
-    },
-  });
-  app.use('/images', express.static(path.join(__dirname, 'images')));
+//     res.setHeader('Access-Control-Allow-Origin', '*');
+//     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE');
+//     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+//     next();
+// });
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'images');
+  },
+  filename: function (req, file, cb) {
+    cb(null, uuidv4());
+  },
+});
+app.use('/images', express.static(path.join(__dirname, 'images')));
 const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === 'image/png' ||
@@ -45,15 +45,20 @@ app.use((error, req, res, next) => {
   console.log(error);
   const status = err.statusCode;
   const message = err.message;
-  const data = error.data
-  res.status(status).json({ message: message,data:data });
+  const data = error.data;
+  res.status(status).json({ message: message, data: data });
 });
+
 app.use('/feed', feedRoutes);
 app.use('/auth', authRoutes);
 mongoose
   .connect(process.env.URL_DB)
   .then((result) => {
-    app.listen(8080);
+    const server = app.listen(8080);
+    const io = require('./socket').init(server);
+    io.on('connection', (socket) => {
+      console.log('client connected');
+    });
   })
   .catch((err) => {
     console.log(err);
