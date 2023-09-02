@@ -7,7 +7,7 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 require('dotenv').config();
-
+const { Socket } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const app = express();
 app.use(cors());
@@ -54,10 +54,17 @@ app.use('/auth', authRoutes);
 mongoose
   .connect(process.env.URL_DB)
   .then((result) => {
-    const server = app.listen(8080);
-    const io = require('./socket').init(server);
+    const server = app.listen(8080, () => {
+      console.log(`Server is running`);
+    });
+    const io = require('./socket.js').init(server, {
+      cors: {
+        origin: 'http://localhost:3000',
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      },
+    });
     io.on('connection', (socket) => {
-      console.log('client connected');
+      console.log('Client Connected!');
     });
   })
   .catch((err) => {
